@@ -3,7 +3,7 @@
 -- Phase II Create Table and Insert Statements
 
 -- Team 38
--- Maisa Basher (
+-- Maisa Basher (mbasher3)
 -- Denny Nguyen (dnguyen369)
 -- Ajoke Akinseye (aakinseye3)
 
@@ -17,17 +17,17 @@ use rdd;
 
 DROP table if exists user;
 CREATE TABLE user (
-	username varchar(200) not null,
-    address varchar(200) not null,
+	username varchar(15) not null,
+    address varchar(30) not null,
     birthdate date not null,
-    first_name varchar(200) not null,
-    last_name varchar(200) not null,
+    first_name varchar(15) not null,
+    last_name varchar(15) not null,
     primary key (username)
     );
     
 DROP table if exists owner;
 CREATE TABLE owner (
-    username varchar(200) not null,
+    username varchar(15) not null,
     debt integer not null,
     primary key (username),
 	foreign key (username) references user(username)
@@ -39,7 +39,7 @@ CREATE TABLE employee (
     taxID varchar(11) not null, -- Tax ID is 9 numbers with two hyphens
     experience int not null,
     hired varchar(10) not null, -- ex. 2022-02-19 
-    salary int not null,
+    salary decimal(10,2) not null,
     primary key (username),
     foreign key (username) references user(username)
     );
@@ -53,7 +53,7 @@ CREATE TABLE ingredient (
     
 DROP table if exists pilot;
 CREATE TABLE pilot (
-	username varchar(200) not null,
+	username varchar(15) not null,
     experience int,
     license_type int, -- I assumed this is licenseID per the dataset 
     primary key (username),
@@ -62,14 +62,18 @@ CREATE TABLE pilot (
    
 DROP table if exists worker;
 CREATE TABLE worker (
-	username varchar(200) not null,
+	username varchar(15) not null,
 	primary key (username),
     foreign key (username) references user(username)
     );
 
 DROP table if exists location;
 CREATE TABLE location ( 
-		  	-- Dataset does not clearly specify label and space
+-- Dataset does not clearly specify label and space
+	label varchar(15) not null,
+    x_coord decimal(3, 0), 
+    y_coord decimal(3, 0), 
+    primary key (label)
 );
 
 
@@ -102,4 +106,15 @@ CREATE TABLE drone (
     sales int not null,
     weight int not null,
     location varchar(20) not null);
+    
     -- I'm confused about the ControllerPilot foreign key
+    
+DROP table if exists Fund; 
+CREATE TABLE Fund (
+	Restaurant varchar(15) not null,
+	funded_by varchar(15) not null,
+    amount_invested decimal(5,2),
+    dt_invested date,
+    foreign key (Restaurant) references restaurant(name_),
+    foreign key (funded_by) references owner(username)
+    );
