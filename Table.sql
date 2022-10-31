@@ -10,9 +10,9 @@
 
 
 -- CREATE DATABASE STATEMENTS BELOW
-DROP DATABASE IF EXISTS rdd;
-CREATE DATABASE IF NOT EXISTS rdd;
-use rdd;
+DROP DATABASE IF EXISTS RestaurantSupplyExpressDroneDelivery ;
+CREATE DATABASE IF NOT EXISTS RestaurantSupplyExpressDroneDelivery;
+use RestaurantSupplyExpressDroneDelivery;
 
 -- CREATE TABLE STATEMENTS BELOW
 
@@ -145,33 +145,33 @@ CREATE TABLE drone (
     sales int not null,
     flown_by varchar(40),
     hover varchar(40) not null,
-    -- swarmDroneID varchar(40),
-    -- swarmDroneTag int,
+    swarmDroneID varchar(40),
+    swarmDroneTag int,
     PRIMARY KEY (ID,tag),
     foreign key (ID) references service(ID),
     foreign key (hover) references location(label),
-    foreign key (flown_by) references pilot(username)
-	-- foreign key (swarmDroneID, swarmDroneTag) references drone(ID, tag) on update cascade
+    foreign key (flown_by) references pilot(username),
+	foreign key (swarmDroneID, swarmDroneTag) references drone(ID, tag) on update cascade
     );
     
-INSERT INTO drone VALUES('hf',1, 100, 6, 0, 'fprefontaine6','southside'), 
-('hf', 5, 27, 7, 100, 'fprefontaine6', 'southside'),
-('hf', 8, 100, 8, 0, 'bsummers4', 'southside'),
-('hf', 11, 25, 10, 0, null,'buckhead'),
-('hf', 16, 17, 5, 40, 'fprefontaine6', 'buckhead'),
-('osf', 1, 100, 9, 0, 'awilson5','airport'),
-('osf', 2, 75, 7, 0, null,'airport'),
-('rr', 3, 100, 5, 50, 'agarcia7', 'avalon'),
-('rr', 7, 53, 5, 100, 'agarcia7', 'avalon'),
-('rr', 8, 100, 6, 0, 'agarcia7','highpoint'),
-('rr', 11, 90, 6, 0, null, 'highpoint');
+INSERT INTO drone VALUES('hf',1, 100, 6, 0, 'fprefontaine6','southside', null, null), 
+('hf', 5, 27, 7, 100, 'fprefontaine6', 'southside', null, null),
+('hf', 8, 100, 8, 0, 'bsummers4', 'southside', null, null),
+('hf', 11, 25, 10, 0, null,'buckhead', 'hf',5),
+('hf', 16, 17, 5, 40, 'fprefontaine6', 'buckhead', null, null),
+('osf', 1, 100, 9, 0, 'awilson5','airport', null, null),
+('osf', 2, 75, 7, 0, null,'airport', 'osf',1),
+('rr', 3, 100, 5, 50, 'agarcia7', 'avalon', null, null),
+('rr', 7, 53, 5, 100, 'agarcia7', 'avalon', null, null),
+('rr', 8, 100, 6, 0, 'agarcia7','highpoint', null, null),
+('rr', 11, 90, 6, 0, null, 'highpoint', 'rr',8);
 
 
 DROP table if exists Fund; 
 CREATE TABLE Fund (
 	Restaurant varchar(100) not null,
 	funded_by varchar(40) not null,
-    amount_invested decimal(5,2),
+    amount_invested decimal(5,0),
     dt_invested date,
     foreign key (Restaurant) references restaurant(name_),
     foreign key (funded_by) references owner(username)
@@ -212,7 +212,7 @@ CREATE TABLE contains(
     droneTag int not null,
     ingredient varchar(40) not null,
     quantity int not null,
-    price decimal(5,2) not null,
+    price decimal(5,0) not null,
     PRIMARY KEY(droneSID, droneTag, ingredient),
     foreign key (droneSID, droneTag) references drone(ID, tag),
     foreign key (ingredient) references ingredient(barcode)
@@ -223,16 +223,5 @@ INSERT INTO contains VALUES('rr', 3, 'clc_4T9U25X', 2, 28),('hf', 5, 'clc_4T9U25
  ('rr', 3, 'hs_5E7L23M', 2, 15), ('hf', 5, 'hs_5E7L23M', 4, 17);
 
 
-DROP table if exists swarm; 
-CREATE TABLE swarm(
-	leadDroneID varchar(40) not null,
-    leadDroneTag int not null,
-    swarmDroneID varchar(40) not null,
-	swarmDroneTag int not null,
-    PRIMARY KEY(leadDroneID, leadDroneTag, swarmDroneID, swarmDroneTag),
-    foreign key (leadDroneID, leadDroneTag) references drone(ID, tag)
-    -- foreign key (swarmDroneID, swarmDroneTag) references drone(ID, tag)
-    );
-INSERT INTO swarm VALUES('h5', 5, 'hf', 11),('osf', 1, 'osf', 2),
-('rr',8, 'rr', 11);
+
 
