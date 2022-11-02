@@ -12,18 +12,18 @@
 -- CREATE DATABASE STATEMENTS BELOW
 DROP DATABASE IF EXISTS RestaurantSupplyExpressDroneDelivery ;
 CREATE DATABASE IF NOT EXISTS RestaurantSupplyExpressDroneDelivery;
-use RestaurantSupplyExpressDroneDelivery;
+USE RestaurantSupplyExpressDroneDelivery;
 
 -- CREATE TABLE STATEMENTS BELOW
 
-DROP table if exists user;
+DROP TABLE IF EXISTS user;
 CREATE TABLE user (
-	username varchar(40) not null,
-    first_name varchar(100) not null,
-    last_name varchar(100) not null,
-    address varchar(100) not null,
-    birthdate date not null,
-    primary key (username)
+	username VARCHAR(40) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    address VARCHAR(500) NOT NULL,
+    birthdate DATE NOT NULL,
+    PRIMARY KEY(username)
     );
 INSERT INTO user VALUES ('agarcia7', 'Alejandro', 'Garcia', '710 Living Water Drive', '1966-10-29'),
 ('awilson5','Aaron','Wilson','220 Peachtree Street','1963-11-11'),('bsummers4', 'Brie','Summers','5105 Dragon Star Circle','1976-02-09'),
@@ -38,23 +38,23 @@ INSERT INTO user VALUES ('agarcia7', 'Alejandro', 'Garcia', '710 Living Water Dr
 
 DROP table if exists owner;
 CREATE TABLE owner (
-    username varchar(40) not null,
-    debt decimal(5,2),
-    primary key (username),
-	foreign key (username) references user(username)
+    username VARCHAR(40) NOT NULL,
+    debt DECIMAL(5,2),
+    PRIMARY KEY(username),
+	FOREIGN KEY(username) REFERENCES user(username)
     );
     
 INSERT INTO owner VALUES('cjordan5',null),('jstone5', null),('sprince6', null);
     
-DROP table if exists employee;
+DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
-	username varchar(40) not null,
-    taxID char(11) not null, -- Tax ID is 9 numbers with two hyphens
-    hired date not null, -- ex. 2022-02-19 
-    experience int not null,
-    salary decimal(10,2) not null,
-    primary key (username),
-    foreign key (username) references user(username)
+	username VARCHAR(40) NOT NULL,
+    taxID CHAR(11) NOT NULL, -- Tax ID is 9 numbers with two hyphens
+    hired DATE NOT NULL, -- ex. 2022-02-19 
+    experience INT NOT NULL,
+    salary DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY(username),
+    FOREIGN KEY(username) REFERENCES user(username)
     );
     
 INSERT INTO employee VALUES('agarcia7', '999-99-9999', '2019-03-17', 24, 41000), 
@@ -66,13 +66,13 @@ INSERT INTO employee VALUES('agarcia7', '999-99-9999', '2019-03-17', 24, 41000),
  ('mrobot2','010-10-1010', '2015-05-27', 8, 38000),('rlopez6','123-58-1321', '2017-02-05', 51, 64000),
  ('tmccall5','333-33-3333', '2018-10-17', 29, 33000);
     
-DROP table if exists pilot;
+DROP TABLE IF EXISTS pilot;
 CREATE TABLE pilot (
-	username varchar(15) not null,
-    licenseID char(6) not null, -- I assumed this is licenseID per the dataset 
-    experience int not null,
-    primary key (username),
-    foreign key (username) references employee(username)
+	username VARCHAR(15) NOT NULL,
+    licenseID CHAR(6) NOT NULL, -- I assumed this is licenseID per the dataset 
+    experience INT NOT NULL,
+    PRIMARY KEY(username),
+    FOREIGN KEY(username) REFERENCES employee(username)
     );
 INSERT INTO pilot VALUES('agarcia7', '610623', 38),('awilson5', '314159', 41),
 ('bsummers4', '411911', 35),('csoares8', '343563', 7),('echarles19', '236001', 10),
@@ -80,11 +80,11 @@ INSERT INTO pilot VALUES('agarcia7', '610623', 38),('awilson5', '314159', 41),
 ('rlopez6', '235711', 58),('tmccall5', '181633', 10);
 
   
-DROP table if exists worker;
+DROP TABLE IF EXISTS worker;
 CREATE TABLE worker (
-	username varchar(15) not null,
-	primary key (username),
-    foreign key (username) references employee(username)
+	username VARCHAR(15) NOT NULL,
+	PRIMARY KEY(username),
+    FOREIGN KEY(username) REFERENCES employee(username)
     );
 
 INSERT INTO worker VALUES('ckann5'),('csoares8'),('echarles19'),('eross10'),
@@ -92,14 +92,14 @@ INSERT INTO worker VALUES('ckann5'),('csoares8'),('echarles19'),('eross10'),
     
 
 
-DROP table if exists location;
+DROP TABLE IF EXISTS location;
 CREATE TABLE location ( 
 -- Dataset does not clearly specify label and space
-	label varchar(40) not null,
+	label VARCHAR(40) NOT NULL,
     space INT,
-    x_coord decimal(3, 0), 
-    y_coord decimal(3, 0), 
-    primary key (label)
+    x_coord DECIMAL(3, 0), 
+    y_coord DECIMAL(3, 0), 
+    PRIMARY KEY(label)
 );
 
 INSERT INTO location VALUES('plaza', 10, -4, -3),
@@ -107,14 +107,14 @@ INSERT INTO location VALUES('plaza', 10, -4, -3),
 ('midtown', 7, 2, 1),('southside', 5, 1, - 16), ('airport', 15, 5, -6),
 ('highpoint', 4, 11, 3);
 
-DROP table if exists restaurant;
+DROP TABLE IF EXISTS restaurant;
 CREATE TABLE restaurant (
-	name_ varchar(100) not null,
-    rating int not null,
-    spent int not null,
-    location varchar(40) not null,
-    primary key (name_),
-    foreign key (location) references location(label)    -- need to create location table to implement foreign key
+	name_ VARCHAR(100) NOT NULL,
+    rating INT NOT NULL,
+    spent DECIMAL(3,0) NOT NULL,
+    location VARCHAR(40) NOT NULL,
+    PRIMARY KEY (name_),
+    FOREIGN KEY (location) REFERENCES location(label)    -- need to create location table to implement foreign key
     );
 INSERT INTO restaurant VALUES('Bishoku', 5, 10, 'plaza'),('Casi Cielo', 5, 30, 'plaza'),
 ('Ecco', 3, 0, 'buckhead'),('Fogo de Chao', 4, 30, 'buckhead'),('Hearth', 4, 0, 'avalon'),
@@ -122,36 +122,36 @@ INSERT INTO restaurant VALUES('Bishoku', 5, 10, 'plaza'),('Casi Cielo', 5, 30, '
 ('South City Kitchen', 5, 30, 'midtown'),('Tre Vele', 4, 10, 'plaza');
 
    
-DROP table if exists service; 
+DROP TABLE IF EXISTS service; 
 CREATE TABLE service (
-	ID varchar(40) not null,
-    long_name varchar(100),
-    home_base varchar(40),
-    manager varchar(40),
-    primary key (ID),
-    foreign key (manager) references worker(username),
-    foreign key (home_base) references location(label)
+	ID VARCHAR(40) NOT NULL,
+    long_name VARCHAR(100),
+    home_base VARCHAR(40),
+    manager VARCHAR(40),
+    PRIMARY KEY (ID),
+    FOREIGN KEY(manager) REFERENCES worker(username),
+    FOREIGN KEY (home_base) REFERENCES location(label)
     );
 INSERT INTO service VALUES('rr','Ravishing Radish','avalon','echarles19'),('hf','Herban Feast','southside','hstark16'),
 ('osf', 'On Safari Foods','southside','eross10');    
 
     
-DROP table if exists drone;
+DROP TABLE IF EXISTS drone;
 CREATE TABLE drone (
-	ID varchar(40) not null,
-    tag int not null, 
-    fuel int not null,
-    capacity int not null,
-    sales int not null,
-    flown_by varchar(40),
-    hover varchar(40) not null,
-    swarmDroneID varchar(40),
-    swarmDroneTag int,
+	ID VARCHAR(40) NOT NULL,
+    tag INT NOT NULL, 
+    fuel INT NOT NULL,
+    capacity INT NOT NULL,
+    sales INT NOT NULL,
+    flown_by VARCHAR(40),
+    hover VARCHAR(40) NOT NULL,
+    swarmDroneID VARCHAR(40),
+    swarmDroneTag INT,
     PRIMARY KEY (ID,tag),
-    foreign key (ID) references service(ID),
-    foreign key (hover) references location(label),
-    foreign key (flown_by) references pilot(username),
-	foreign key (swarmDroneID, swarmDroneTag) references drone(ID, tag) on update cascade
+    FOREIGN KEY (ID) REFERENCES service(ID),
+    FOREIGN KEY (hover) REFERENCES location(label),
+    FOREIGN KEY (flown_by) REFERENCES pilot(username),
+	FOREIGN KEY (swarmDroneID, swarmDroneTag) REFERENCES drone(ID, tag)
     );
     
 INSERT INTO drone VALUES('hf',1, 100, 6, 0, 'fprefontaine6','southside', null, null), 
@@ -167,27 +167,27 @@ INSERT INTO drone VALUES('hf',1, 100, 6, 0, 'fprefontaine6','southside', null, n
 ('rr', 11, 90, 6, 0, null, 'highpoint', 'rr',8);
 
 
-DROP table if exists Fund; 
+DROP TABLE IF EXISTS Fund; 
 CREATE TABLE Fund (
-	Restaurant varchar(100) not null,
-	funded_by varchar(40) not null,
-    amount_invested decimal(5,0),
-    dt_invested date,
-    foreign key (Restaurant) references restaurant(name_),
-    foreign key (funded_by) references owner(username)
+	Restaurant VARCHAR(100) NOT NULL,
+	funded_by VARCHAR(40) NOT NULL,
+    amount_invested DECIMAL(5,0),
+    dt_invested DATE,
+    FOREIGN KEY (Restaurant) REFERENCES restaurant(name_),
+    FOREIGN KEY (funded_by) REFERENCES owner(username)
     );
 INSERT INTO Fund VALUES('Ecco','jstone5',20,'2022-10-25'),
 ('Il Giallo','sprince6',10,'2022-03-06'),('Lure','jstone5',30,'2022-09-08'),
 ('South City Kitchen','jstone5',5, '2022-07-25');
 
 
-DROP table if exists works_for; 
+DROP TABLE IF EXISTS works_for; 
 CREATE TABLE works_for(
-	employee varchar(40) not null,
-    employed_by varchar(40) not null,
+	employee VARCHAR(40) NOT NULL,
+    employed_by VARCHAR(40) NOT NULL,
     PRIMARY KEY (employee, employed_by),
-    foreign key (employee) references employee(username),
-    foreign key (employed_by) references service(ID)
+    FOREIGN KEY (employee) REFERENCES employee(username),
+    FOREIGN KEY (employed_by) REFERENCES service(ID)
 	);
 
 INSERT INTO works_for VALUES('agarcia7', 'rr'), ('awilson5','osf'),
@@ -195,27 +195,27 @@ INSERT INTO works_for VALUES('agarcia7', 'rr'), ('awilson5','osf'),
 ('fprefontaine6','hf'),('hstark16', 'hf'), ('mrobot1','osf'),('mrobot1','rr'),
 ('rlopez6','rr'),('tmccall5','hf');
 
-DROP table if exists ingredient;
+DROP TABLE IF EXISTS ingredient;
 CREATE TABLE ingredient (
-	barcode varchar(40) not null,
-    iname varchar(100),
-    weight int,
+	barcode VARCHAR(40) NOT NULL,
+    iname VARCHAR(100),
+    weight INT,
     PRIMARY KEY(barcode)
     );
 INSERT INTO ingredient VALUES('bv_4U5L7M', 'balsamic vinegar', 4),
 ('clc_4T9U25X','caviar', 5),('pr_3C6A9R', 'prosciutto',6),('ap_9T25E36L', 'foie gras',4),
 ('ss_2D4E6L','saffron',3),('hs_5E7L23M', 'truffles', 3);
 
-DROP table if exists contains; 
+DROP TABLE IF EXISTS contains; 
 CREATE TABLE contains(
-	droneSID varchar(40) not null,
-    droneTag int not null,
-    ingredient varchar(40) not null,
-    quantity int not null,
-    price decimal(5,0) not null,
+	droneSID VARCHAR(40) NOT NULL,
+    droneTag INT NOT NULL,
+    ingredient VARCHAR(40) NOT NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(5,0) NOT NULL,
     PRIMARY KEY(droneSID, droneTag, ingredient),
-    foreign key (droneSID, droneTag) references drone(ID, tag),
-    foreign key (ingredient) references ingredient(barcode)
+    FOREIGN KEY(droneSID, droneTag) REFERENCES drone(ID, tag),
+    FOREIGN KEY(ingredient) REFERENCES ingredient(barcode)
     );
 INSERT INTO contains VALUES('rr', 3, 'clc_4T9U25X', 2, 28),('hf', 5, 'clc_4T9U25X', 1, 30),
 ('osf', 1, 'pr_3C6A9R', 5, 20), ('hf', 8, 'pr_3C6A9R', 4, 18),('osf', 1, 'ss_2D4E6L',3, 23),
