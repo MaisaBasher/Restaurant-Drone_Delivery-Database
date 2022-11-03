@@ -70,7 +70,7 @@ INSERT INTO employee VALUES('agarcia7', '999-99-9999', '2019-03-17', 24, 41000),
     
 DROP TABLE IF EXISTS pilot;
 CREATE TABLE pilot (
-	username VARCHAR(15) NOT NULL,
+	username VARCHAR(40) NOT NULL,
     licenseID CHAR(6) NOT NULL,
     experience INT NOT NULL,
     PRIMARY KEY(username),
@@ -85,7 +85,7 @@ INSERT INTO pilot VALUES('agarcia7', '610623', 38),('awilson5', '314159', 41),
   
 DROP TABLE IF EXISTS worker;
 CREATE TABLE worker (
-	username VARCHAR(15) NOT NULL,
+	username VARCHAR(40) NOT NULL,
 	PRIMARY KEY(username),
     CONSTRAINT worker_ibfk_1 FOREIGN KEY(username) REFERENCES employee(username)
     )ENGINE=InnoDB;
@@ -112,7 +112,7 @@ INSERT INTO location VALUES('plaza', 10, -4, -3),
 
 DROP TABLE IF EXISTS restaurant;
 CREATE TABLE restaurant (
-	name_ VARCHAR(100) NOT NULL,
+	name_ VARCHAR(40) NOT NULL,
     rating INT NOT NULL,
     spent DECIMAL(3,0) NOT NULL,
     location VARCHAR(40) NOT NULL,
@@ -176,6 +176,7 @@ CREATE TABLE Fund (
 	funded_by VARCHAR(40) NOT NULL,
     amount_invested DECIMAL(5,0),
     dt_invested DATE,
+    PRIMARY KEY (Restaurant, funded_by),
     CONSTRAINT fund_ibfk_1 FOREIGN KEY (Restaurant) REFERENCES restaurant(name_),
     CONSTRAINT fund_ibfk_2 FOREIGN KEY (funded_by) REFERENCES owner(username)
     )ENGINE=InnoDB;
