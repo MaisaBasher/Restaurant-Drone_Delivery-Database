@@ -24,7 +24,8 @@ CREATE TABLE user (
     address VARCHAR(500) NOT NULL,
     birthdate DATE NOT NULL,
     PRIMARY KEY(username)
-    );
+    )ENGINE=InnoDB;
+    
 INSERT INTO user VALUES ('agarcia7', 'Alejandro', 'Garcia', '710 Living Water Drive', '1966-10-29'),
 ('awilson5','Aaron','Wilson','220 Peachtree Street','1963-11-11'),('bsummers4', 'Brie','Summers','5105 Dragon Star Circle','1976-02-09'),
 ('cjordan5','Clark','Jordan','77 Infinite Stars Road','1966-06-05' ), ('ckann5','Carrot','Kann','64 Knights Square Trail', '1972-09-01'),
@@ -41,8 +42,8 @@ CREATE TABLE owner (
     username VARCHAR(40) NOT NULL,
     debt DECIMAL(5,2),
     PRIMARY KEY(username),
-	FOREIGN KEY(username) REFERENCES user(username)
-    );
+	CONSTRAINT owner_ibfk_1 FOREIGN KEY(username) REFERENCES user(username)
+    )ENGINE=InnoDB;
     
 INSERT INTO owner VALUES('cjordan5',null),('jstone5', null),('sprince6', null);
     
@@ -52,10 +53,11 @@ CREATE TABLE employee (
     taxID CHAR(11) NOT NULL, -- Tax ID is 9 numbers with two hyphens
     hired DATE NOT NULL, -- ex. 2022-02-19 
     experience INT NOT NULL,
-    salary DECIMAL(10,2) NOT NULL,
+    salary DECIMAL(10,0) NOT NULL,
     PRIMARY KEY(username),
-    FOREIGN KEY(username) REFERENCES user(username)
-    );
+    UNIQUE (taxID),
+    CONSTRAINT employee_ibfk_1 FOREIGN KEY(username) REFERENCES user(username)
+    )ENGINE=InnoDB;
     
 INSERT INTO employee VALUES('agarcia7', '999-99-9999', '2019-03-17', 24, 41000), 
  ('awilson5','111-11-1111', '2020-03-15', 9, 46000),('bsummers4','000-00-0000', '2018-12-06', 17, 35000),
@@ -69,11 +71,12 @@ INSERT INTO employee VALUES('agarcia7', '999-99-9999', '2019-03-17', 24, 41000),
 DROP TABLE IF EXISTS pilot;
 CREATE TABLE pilot (
 	username VARCHAR(15) NOT NULL,
-    licenseID CHAR(6) NOT NULL, -- I assumed this is licenseID per the dataset 
+    licenseID CHAR(6) NOT NULL,
     experience INT NOT NULL,
     PRIMARY KEY(username),
-    FOREIGN KEY(username) REFERENCES employee(username)
-    );
+    UNIQUE (licenseID),
+    CONSTRAINT pilot_ibfk_1 FOREIGN KEY(username) REFERENCES employee(username)
+    )ENGINE=InnoDB;
 INSERT INTO pilot VALUES('agarcia7', '610623', 38),('awilson5', '314159', 41),
 ('bsummers4', '411911', 35),('csoares8', '343563', 7),('echarles19', '236001', 10),
 ('fprefontaine6', '657483', 2),('lrodriguez5', '287182', 67),('mrobot1', '101010', 18),
@@ -84,8 +87,8 @@ DROP TABLE IF EXISTS worker;
 CREATE TABLE worker (
 	username VARCHAR(15) NOT NULL,
 	PRIMARY KEY(username),
-    FOREIGN KEY(username) REFERENCES employee(username)
-    );
+    CONSTRAINT worker_ibfk_1 FOREIGN KEY(username) REFERENCES employee(username)
+    )ENGINE=InnoDB;
 
 INSERT INTO worker VALUES('ckann5'),('csoares8'),('echarles19'),('eross10'),
 ('hstark16'),('mrobot2'),('tmccall5');
@@ -100,7 +103,7 @@ CREATE TABLE location (
     x_coord DECIMAL(3, 0), 
     y_coord DECIMAL(3, 0), 
     PRIMARY KEY(label)
-);
+)ENGINE=InnoDB;
 
 INSERT INTO location VALUES('plaza', 10, -4, -3),
 ('buckhead', 8, 7, 10), ('avalon', null, 2,15),('mercedes', null, -8, 5),
@@ -114,8 +117,8 @@ CREATE TABLE restaurant (
     spent DECIMAL(3,0) NOT NULL,
     location VARCHAR(40) NOT NULL,
     PRIMARY KEY (name_),
-    FOREIGN KEY (location) REFERENCES location(label)    -- need to create location table to implement foreign key
-    );
+    CONSTRAINT restaurant_ibfk_1 FOREIGN KEY (location) REFERENCES location(label)    -- need to create location table to implement foreign key
+    )ENGINE=InnoDB;
 INSERT INTO restaurant VALUES('Bishoku', 5, 10, 'plaza'),('Casi Cielo', 5, 30, 'plaza'),
 ('Ecco', 3, 0, 'buckhead'),('Fogo de Chao', 4, 30, 'buckhead'),('Hearth', 4, 0, 'avalon'),
 ('Il Giallo', 4, 10, 'mercedes'), ('Lure', 5, 20, 'midtown'),('Micks', 2, 0, 'southside'),
@@ -129,9 +132,9 @@ CREATE TABLE service (
     home_base VARCHAR(40),
     manager VARCHAR(40),
     PRIMARY KEY (ID),
-    FOREIGN KEY(manager) REFERENCES worker(username),
-    FOREIGN KEY (home_base) REFERENCES location(label)
-    );
+    CONSTRAINT service_ibfk_1 FOREIGN KEY(manager) REFERENCES worker(username),
+    CONSTRAINT service_ibfk_2 FOREIGN KEY (home_base) REFERENCES location(label)
+    )ENGINE=InnoDB;
 INSERT INTO service VALUES('rr','Ravishing Radish','avalon','echarles19'),('hf','Herban Feast','southside','hstark16'),
 ('osf', 'On Safari Foods','southside','eross10');    
 
@@ -148,11 +151,11 @@ CREATE TABLE drone (
     swarmDroneID VARCHAR(40),
     swarmDroneTag INT,
     PRIMARY KEY (ID,tag),
-    FOREIGN KEY (ID) REFERENCES service(ID),
-    FOREIGN KEY (hover) REFERENCES location(label),
-    FOREIGN KEY (flown_by) REFERENCES pilot(username),
-	FOREIGN KEY (swarmDroneID, swarmDroneTag) REFERENCES drone(ID, tag)
-    );
+    CONSTRAINT drone_ibfk_1 FOREIGN KEY (ID) REFERENCES service(ID),
+    CONSTRAINT drone_ibfk_2 FOREIGN KEY (hover) REFERENCES location(label),
+    CONSTRAINT drone_ibfk_3 FOREIGN KEY (flown_by) REFERENCES pilot(username),
+	CONSTRAINT drone_ibfk_4 FOREIGN KEY (swarmDroneID, swarmDroneTag) REFERENCES drone(ID, tag)
+    )ENGINE=InnoDB;
     
 INSERT INTO drone VALUES('hf',1, 100, 6, 0, 'fprefontaine6','southside', null, null), 
 ('hf', 5, 27, 7, 100, 'fprefontaine6', 'southside', null, null),
@@ -173,9 +176,9 @@ CREATE TABLE Fund (
 	funded_by VARCHAR(40) NOT NULL,
     amount_invested DECIMAL(5,0),
     dt_invested DATE,
-    FOREIGN KEY (Restaurant) REFERENCES restaurant(name_),
-    FOREIGN KEY (funded_by) REFERENCES owner(username)
-    );
+    CONSTRAINT fund_ibfk_1 FOREIGN KEY (Restaurant) REFERENCES restaurant(name_),
+    CONSTRAINT fund_ibfk_2 FOREIGN KEY (funded_by) REFERENCES owner(username)
+    )ENGINE=InnoDB;
 INSERT INTO Fund VALUES('Ecco','jstone5',20,'2022-10-25'),
 ('Il Giallo','sprince6',10,'2022-03-06'),('Lure','jstone5',30,'2022-09-08'),
 ('South City Kitchen','jstone5',5, '2022-07-25');
@@ -186,9 +189,9 @@ CREATE TABLE works_for(
 	employee VARCHAR(40) NOT NULL,
     employed_by VARCHAR(40) NOT NULL,
     PRIMARY KEY (employee, employed_by),
-    FOREIGN KEY (employee) REFERENCES employee(username),
-    FOREIGN KEY (employed_by) REFERENCES service(ID)
-	);
+    CONSTRAINT worksfor_ibfk_1 FOREIGN KEY (employee) REFERENCES employee(username),
+    CONSTRAINT worksfor_ibfk_2 FOREIGN KEY (employed_by) REFERENCES service(ID)
+	)ENGINE=InnoDB;
 
 INSERT INTO works_for VALUES('agarcia7', 'rr'), ('awilson5','osf'),
 ('bsummers4', 'hf'),('ckann5','osf'), ('echarles19','rr'),('eross10','osf'),
@@ -201,7 +204,8 @@ CREATE TABLE ingredient (
     iname VARCHAR(100),
     weight INT,
     PRIMARY KEY(barcode)
-    );
+    )ENGINE=InnoDB;
+    
 INSERT INTO ingredient VALUES('bv_4U5L7M', 'balsamic vinegar', 4),
 ('clc_4T9U25X','caviar', 5),('pr_3C6A9R', 'prosciutto',6),('ap_9T25E36L', 'foie gras',4),
 ('ss_2D4E6L','saffron',3),('hs_5E7L23M', 'truffles', 3);
@@ -214,9 +218,9 @@ CREATE TABLE contains(
     quantity INT NOT NULL,
     price DECIMAL(5,0) NOT NULL,
     PRIMARY KEY(droneSID, droneTag, ingredient),
-    FOREIGN KEY(droneSID, droneTag) REFERENCES drone(ID, tag),
-    FOREIGN KEY(ingredient) REFERENCES ingredient(barcode)
-    );
+    CONSTRAINT contains_ibfk_1 FOREIGN KEY(droneSID, droneTag) REFERENCES drone(ID, tag),
+    CONSTRAINT contains_ibfk_2 FOREIGN KEY(ingredient) REFERENCES ingredient(barcode)
+    )ENGINE=InnoDB;
 INSERT INTO contains VALUES('rr', 3, 'clc_4T9U25X', 2, 28),('hf', 5, 'clc_4T9U25X', 1, 30),
 ('osf', 1, 'pr_3C6A9R', 5, 20), ('hf', 8, 'pr_3C6A9R', 4, 18),('osf', 1, 'ss_2D4E6L',3, 23),
 ('hf', 11, 'ss_2D4E6L', 3, 19), ('hf', 1, 'ss_2D4E6L', 6, 27), ('osf', 2, 'hs_5E7L23M', 7, 14),
