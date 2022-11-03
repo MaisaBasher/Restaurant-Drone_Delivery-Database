@@ -40,12 +40,11 @@ INSERT INTO user VALUES ('agarcia7', 'Alejandro', 'Garcia', '710 Living Water Dr
 DROP table if exists owner;
 CREATE TABLE owner (
     username VARCHAR(40) NOT NULL,
-    debt DECIMAL(5,2),
     PRIMARY KEY(username),
 	CONSTRAINT owner_ibfk_1 FOREIGN KEY(username) REFERENCES user(username)
     )ENGINE=InnoDB;
     
-INSERT INTO owner VALUES('cjordan5',null),('jstone5', null),('sprince6', null);
+INSERT INTO owner VALUES('cjordan5'),('jstone5'),('sprince6');
     
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
