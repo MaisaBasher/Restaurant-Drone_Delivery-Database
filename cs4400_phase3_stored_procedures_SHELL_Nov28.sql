@@ -129,12 +129,23 @@ a unique identifier, along with a valid home base and manager. */
 -- -----------------------------------------------------------------------------
 drop procedure if exists add_service;
 delimiter //
-create procedure add_service (in ip_id varchar(40), in ip_long_name varchar(100),
-	in ip_home_base varchar(40), in ip_manager varchar(40))
+create procedure add_service (
+in ip_id varchar(40),
+in ip_long_name varchar(100),
+in ip_home_base varchar(40), 
+in ip_manager varchar(40)
+)
 sp_main: begin
 	-- ensure new delivery service doesn't already exist
     -- ensure that the home base location is valid
     -- ensure that the manager is valid
+    if (ip_id in (select id from delivery_services) or
+    ip_home_base not in (select label from locations) or
+    ip_manager not in (select username from workers))
+		then leave sp_main;
+	else
+		insert into delivery_services values(ip_id, ip_long_name, ip_home_base, ip_manager);
+	end if;
 end //
 delimiter ;
 
@@ -152,6 +163,12 @@ create procedure add_location (in ip_label varchar(40), in ip_x_coord integer,
 sp_main: begin
 	-- ensure new location doesn't already exist
     -- ensure that the coordinate combination is distinct
+     if (ip_label in (select label from locations) or
+    concat(ip_x_coord, ip_y_coord) in (select concat(x_coord, y_coord) from locations))
+		then leave sp_main;
+	else
+		insert into locations values(ip_label, ip_x_coord, ip_y_coord, ip_space);
+	end if;
 end //
 delimiter ;
 
@@ -166,6 +183,13 @@ delimiter //
 create procedure start_funding (in ip_owner varchar(40), in ip_long_name varchar(40))
 sp_main: begin
 	-- ensure the owner and restaurant are valid
+     if (ip_owner not in (select username from restaurant_owners) or
+    ip_long_name not in (select long_name from restaurants))
+		then leave sp_main;
+	else
+		update restaurants set funded_by = ip_owner
+        where restaurants.long_name = ip_long_name;
+	end if;
 end //
 delimiter ;
 
@@ -184,6 +208,15 @@ sp_main: begin
 	-- ensure that the employee and delivery service are valid
     -- ensure that the employee isn't a manager for another service
 	-- ensure that the employee isn't actively controlling drones for another service
+    if (ip_username in (select username from work_for) or
+    ip_id not in (select id from delivery_services) or
+    ip_username not in (select username from employees) or
+    ip_username in (select manager from delivery_services) or
+    ip_username in (select flown_by from drones))
+		then leave sp_main;
+	else
+		insert into work_for values(ip_username, ip_id);
+    end if;
 end //
 delimiter ;
 
@@ -201,6 +234,13 @@ sp_main: begin
 	-- ensure that the employee is currently working for the service
     -- ensure that the employee isn't an active manager
 	-- ensure that the employee isn't controlling any drones
+     if (ip_username not in (select username from work_for) or
+    ip_username in (select manager from delivery_services) or
+    ip_username in (select flown_by from drones))
+		then leave sp_main;
+	else
+		delete from work_for where (ip_username = username and ip_id = id);
+	end if;
 end //
 delimiter ;
 
@@ -221,6 +261,17 @@ sp_main: begin
 	-- ensure that the employee is not flying any drones
     -- ensure that the employee isn't working for any other services
     -- add the worker role if necessary
+    if (ip_id not in (select id from work_for) or
+    ip_username in (select flown_by from drones) or
+    ip_username in (select id from work_for))
+		then leave sp_main;
+	else
+		update delivery_services set manager = ip_username
+        where id = ip_id;
+        if (concat(ip_username, ip_id) not in (select concat(username, id) from work_for))
+			then insert into work_for values(ip_username, ip_id);
+		end if;
+	end if;
 end //
 delimiter ;
 
@@ -240,6 +291,15 @@ sp_main: begin
 	-- ensure that the selected drone is owned by the same service and is a leader and not follower
 	-- ensure that the employee isn't a manager
     -- ensure that the employee is a valid pilot
+     if (ip_username in (select username from work_for) and
+    ip_id in (select id from drones) and
+    ip_tag in (select swarm_tag from drones) and
+    ip_username in (select username from pilots))
+		then update drones set flown_by = ip_username
+        where id = ip_id and tag = ip_tag;
+	else
+		leave sp_main;
+	end if;
 end //
 delimiter ;
 
@@ -261,6 +321,14 @@ sp_main: begin
     -- ensure that the drone joining the swarm is not already leading a swarm
 	-- ensure that the swarm leader drone is directly controlled
 	-- ensure that the drones are at the same location
+    if (ip_swarm_leader_tag not in (select swarm_tag from drones) and
+    concat(ip_id,ip_tag) in (select concat(id,tag) from drones) and
+    ip_tag not in (select swarm_tag from drones))
+		then update drones set swarm_tag = ip_swarm_leader_tag
+        where id = ip_id and tag = ip_tag;
+	else
+		leave sp_main;
+	end if;
 end //
 delimiter ;
 
