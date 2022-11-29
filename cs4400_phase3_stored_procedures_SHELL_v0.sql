@@ -22,8 +22,16 @@ drop procedure if exists add_owner;
 delimiter //
 create procedure add_owner (in ip_username varchar(40), in ip_first_name varchar(100),
 	in ip_last_name varchar(100), in ip_address varchar(500), in ip_birthdate date)
+	    
 sp_main: begin
     -- ensure new owner has a unique username
+	if ip_username not in (select username from users) 
+		and ip_username not in (select username from restaurant_owners) 
+		and ip_username not in (select username from employees) 
+    then 
+		insert into users values (ip_username, ip_first_name, ip_last_name, ip_address, ip_birthdate);
+		insert into restaurant_owners values (ip_username);
+    end if;
 end //
 delimiter ;
 
@@ -41,6 +49,13 @@ create procedure add_employee (in ip_username varchar(40), in ip_first_name varc
 sp_main: begin
     -- ensure new owner has a unique username
     -- ensure new employee has a unique tax identifier
+    if ip_username not in (select username from users) 
+		and ip_username not in (select username from employees) 
+        and ip_taxID not in (select taxID from employees)
+    then 
+		insert into users values (ip_username, ip_first_name, ip_last_name, ip_address, ip_birthdate);
+		insert into employees values (ip_username, ip_taxID, ip_hired, ip_employee_experience, ip_salary);
+    end if;
 end //
 delimiter ;
 
@@ -56,6 +71,12 @@ create procedure add_pilot_role (in ip_username varchar(40), in ip_licenseID var
 sp_main: begin
     -- ensure new employee exists
     -- ensure new pilot has a unique license identifier
+    if ip_username in (select username from employees) 
+		and ip_username not in (select username from pilots)
+        and ip_licenseID not in (select licenseID from pilots)
+    then 
+		insert into pilots values (ip_username, ip_licenseID, ip_pilot_experience);
+    end if;
 end //
 delimiter ;
 
@@ -68,6 +89,11 @@ delimiter //
 create procedure add_worker_role (in ip_username varchar(40))
 sp_main: begin
     -- ensure new employee exists
+    if ip_username in (select username from employees) 
+		and ip_username not in (select username from workers)
+    then 
+		insert into workers values (ip_username);
+    end if;
 end //
 delimiter ;
 
@@ -82,6 +108,10 @@ create procedure add_ingredient (in ip_barcode varchar(40), in ip_iname varchar(
 	in ip_weight integer)
 sp_main: begin
 	-- ensure new ingredient doesn't already exist
+    if ip_barcode not in (select barcode from ingredients)
+    then
+		insert into ingredients values (ip_barcode, ip_iname, ip_weight);
+	end if;
 end //
 delimiter ;
 
@@ -101,6 +131,14 @@ sp_main: begin
 	-- ensure new drone doesn't already exist
     -- ensure that the delivery service exists
     -- ensure that a valid pilot will control the drone
+    set @location := (select home_base from delivery_services where id = ip_id);
+    
+    if ip_id in (select id from delivery_services)
+		and (ip_id,ip_tag) not in (select id,tag from drones)
+        and (ip_flown_by,ip_id) in (select username,id from work_for)
+    then 
+		insert into drones values (ip_id,ip_tag,ip_fuel,ip_capacity,ip_sales,ip_flown_by,null,null,@location);
+    end if;
 end //
 delimiter ;
 
@@ -119,6 +157,12 @@ sp_main: begin
 	-- ensure new restaurant doesn't already exist
     -- ensure that the location is valid
     -- ensure that the rating is valid (i.e., between 1 and 5 inclusively)
+    if ip_long_name not in (select long_name from restaurants)
+		and ip_location in (select label from locations)
+        and ip_rating >= 1 and ip_rating <= 5 
+    then
+		insert into restaurants values (ip_long_name,ip_rating,ip_spent,ip_location,null);
+    end if;
 end //
 delimiter ;
 
@@ -419,10 +463,6 @@ sp_main: begin
 	-- ensure that the pilot exists
     -- ensure that the pilot is not controlling any drones
     -- remove all remaining information unless the pilot is also a worker
-    delete from pilots where
-		exists(select * from pilot where username = ip_username)
-		and not exists (select * from drones where flown_by = ip_username)
-		and not exists( select * from pilot where username = ip_username);
 end //
 delimiter ;
 
