@@ -610,8 +610,7 @@ sp_main: begin
 	-- ensure that the pilot exists
     -- ensure that the pilot is not controlling any drones
     -- remove all remaining information unless the pilot is also a worker
-<<<<<<< HEAD:cs4400_phase3_stored_procedures_SHELL_v0.sql
-=======
+
 		if exists (select * from pilots where username = ip_username)
         and not exists (select * from drones where flown_by = ip_username)
 		-- and not exists (select * from workers where username = ip_username))
@@ -622,7 +621,6 @@ sp_main: begin
                 delete from users where username = ip_username;
 			end if;
         end if;
->>>>>>> 149024d091525615309e969b06552c6e0de41034:cs4400_phase3_stored_procedures_SHELL_Nov28.sql
 end //
 delimiter ;
 
@@ -637,7 +635,9 @@ monies spent purchasing ingredients by all of those restaurants. And if an owner
 doesn't fund any restaurants then display zeros for the highs, lows and debt. */
 -- -----------------------------------------------------------------------------
 create or replace view display_owner_view as
-select * from restaurant_owners;
+select username,first_name,last_name,address,count(funded_by) as restaurants,count(distinct location) as locations,ifnull(max(rating),0) as max_rating,ifnull(min(rating),0) as min_rating,ifnull(sum(spent),0) as total_debt 
+from users left join restaurants on username = funded_by 
+where username in (select username from restaurant_owners) group by username;
 
 -- [25] display_employee_view()
 -- -----------------------------------------------------------------------------
@@ -647,7 +647,13 @@ experience level, along with the license identifer and piloting experience (if
 applicable), and a 'yes' or 'no' depending on the manager status of the employee. */
 -- -----------------------------------------------------------------------------
 create or replace view display_employee_view as
-select * from employees;
+with managers as 
+(select username,'yes' as manager from employees where username in (select manager from delivery_services)
+union
+select username,'no' as manager from employees where username not in (select manager from delivery_services))
+
+select employees.username,taxID,salary,hired,employees.experience,ifnull(licenseID,'n/a') as licenseID,ifnull(pilots.experience,'n/a') as piloting_experience,manager 
+from ((employees left join pilots on employees.username = pilots.username) left join managers on employees.username = managers.username);
 
 -- [26] display_pilot_view()
 -- -----------------------------------------------------------------------------
@@ -656,7 +662,12 @@ For each pilot, it includes the username, licenseID and piloting experience, alo
 with the number of drones that they are controlling. */
 -- -----------------------------------------------------------------------------
 create or replace view display_pilot_view as
-select * from pilots;
+with new_drones as (select * from drones where (id,tag) in (select swarm_id,swarm_tag from drones where flown_by is null)
+union all
+select * from drones)
+
+select username,licenseID,experience,count(flown_by) as drones,count(distinct hover) as locations from pilots left join new_drones on username = flown_by group by username;
+
 
 -- [27] display_location_view()
 -- -----------------------------------------------------------------------------
