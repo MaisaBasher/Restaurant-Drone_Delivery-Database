@@ -173,12 +173,23 @@ a unique identifier, along with a valid home base and manager. */
 -- -----------------------------------------------------------------------------
 drop procedure if exists add_service;
 delimiter //
-create procedure add_service (in ip_id varchar(40), in ip_long_name varchar(100),
-	in ip_home_base varchar(40), in ip_manager varchar(40))
+create procedure add_service (
+in ip_id varchar(40),
+in ip_long_name varchar(100),
+in ip_home_base varchar(40), 
+in ip_manager varchar(40)
+)
 sp_main: begin
 	-- ensure new delivery service doesn't already exist
     -- ensure that the home base location is valid
     -- ensure that the manager is valid
+    if (ip_id in (select id from delivery_services) or
+    ip_home_base not in (select label from locations) or
+    ip_manager not in (select username from workers))
+		then leave sp_main;
+	else
+		insert into delivery_services values(ip_id, ip_long_name, ip_home_base, ip_manager);
+	end if;
 end //
 delimiter ;
 
@@ -196,6 +207,12 @@ create procedure add_location (in ip_label varchar(40), in ip_x_coord integer,
 sp_main: begin
 	-- ensure new location doesn't already exist
     -- ensure that the coordinate combination is distinct
+     if (ip_label in (select label from locations) or
+    concat(ip_x_coord, ip_y_coord) in (select concat(x_coord, y_coord) from locations))
+		then leave sp_main;
+	else
+		insert into locations values(ip_label, ip_x_coord, ip_y_coord, ip_space);
+	end if;
 end //
 delimiter ;
 
@@ -210,6 +227,13 @@ delimiter //
 create procedure start_funding (in ip_owner varchar(40), in ip_long_name varchar(40))
 sp_main: begin
 	-- ensure the owner and restaurant are valid
+     if (ip_owner not in (select username from restaurant_owners) or
+    ip_long_name not in (select long_name from restaurants))
+		then leave sp_main;
+	else
+		update restaurants set funded_by = ip_owner
+        where restaurants.long_name = ip_long_name;
+	end if;
 end //
 delimiter ;
 
@@ -228,6 +252,15 @@ sp_main: begin
 	-- ensure that the employee and delivery service are valid
     -- ensure that the employee isn't a manager for another service
 	-- ensure that the employee isn't actively controlling drones for another service
+    if (ip_username in (select username from work_for) or
+    ip_id not in (select id from delivery_services) or
+    ip_username not in (select username from employees) or
+    ip_username in (select manager from delivery_services) or
+    ip_username in (select flown_by from drones))
+		then leave sp_main;
+	else
+		insert into work_for values(ip_username, ip_id);
+    end if;
 end //
 delimiter ;
 
@@ -245,6 +278,13 @@ sp_main: begin
 	-- ensure that the employee is currently working for the service
     -- ensure that the employee isn't an active manager
 	-- ensure that the employee isn't controlling any drones
+     if (ip_username not in (select username from work_for) or
+    ip_username in (select manager from delivery_services) or
+    ip_username in (select flown_by from drones))
+		then leave sp_main;
+	else
+		delete from work_for where (ip_username = username and ip_id = id);
+	end if;
 end //
 delimiter ;
 
@@ -265,6 +305,17 @@ sp_main: begin
 	-- ensure that the employee is not flying any drones
     -- ensure that the employee isn't working for any other services
     -- add the worker role if necessary
+    if (ip_id not in (select id from work_for) or
+    ip_username in (select flown_by from drones) or
+    ip_username in (select id from work_for))
+		then leave sp_main;
+	else
+		update delivery_services set manager = ip_username
+        where id = ip_id;
+        if (concat(ip_username, ip_id) not in (select concat(username, id) from work_for))
+			then insert into work_for values(ip_username, ip_id);
+		end if;
+	end if;
 end //
 delimiter ;
 
@@ -284,6 +335,15 @@ sp_main: begin
 	-- ensure that the selected drone is owned by the same service and is a leader and not follower
 	-- ensure that the employee isn't a manager
     -- ensure that the employee is a valid pilot
+     if (ip_username in (select username from work_for) and
+    ip_id in (select id from drones) and
+    ip_tag in (select swarm_tag from drones) and
+    ip_username in (select username from pilots))
+		then update drones set flown_by = ip_username
+        where id = ip_id and tag = ip_tag;
+	else
+		leave sp_main;
+	end if;
 end //
 delimiter ;
 
@@ -305,6 +365,24 @@ sp_main: begin
     -- ensure that the drone joining the swarm is not already leading a swarm
 	-- ensure that the swarm leader drone is directly controlled
 	-- ensure that the drones are at the same location
+    -- if (ip_swarm_leader_tag not in (select swarm_tag from drones) and
+    -- concat(ip_id,ip_tag) in (select concat(id,tag) from drones) and
+    -- ip_tag not in (select swarm_tag from drones))
+	-- then update drones set swarm_tag = ip_swarm_leader_tag
+	-- where id = ip_id and tag = ip_tag;
+	-- else
+	-- leave sp_main;
+    declare swarmlocation varchar(40);
+    set swarmlocation = (select hover from drones where id = ip_id and tag = ip_tag);
+    if ip_tag != ip_swarm_leader_tag
+    and exists (select * from drones where id = ip_id and tag = ip_tag and flown_by is not null)
+    and exists (select * from drones where id = ip_id and tag = ip_swarm_leader_tag and flown_by is not null)
+    and exists (select * from drones where id = ip_id and tag = ip_swarm_leader_tag and hover = swarmlocation)
+    then 
+    update drones
+    set flown_by = null, swarm_id = ip_id, swarm_tag = ip_swarm_leader_tag
+    where id = ip_id and tag = ip_tag;
+	end if;
 end //
 delimiter ;
 
@@ -318,6 +396,15 @@ delimiter //
 create procedure leave_swarm (in ip_id varchar(40), in ip_swarm_tag integer)
 sp_main: begin
 	-- ensure that the selected drone is owned by the service and flying in a swarm
+    declare pilotofswarm varchar(40);
+    set pilotofswarm = (select flown_by from drones where id = ip_id and tag = (select swarm_tag from drones where id = ip_id and tag = ip_swarm_tag));
+    if exists (select * from drones where flown_by is null and id = ip_id and tag = ip_swarm_tag and swarm_id = ip_id)
+    and exists (select * from pilots where username = (select flown_by from drones where id = ip_id and tag = (select swarm_tag from drones where id = ip_id and tag = ip_swarm_tag)))
+    then
+    update drones
+    set flown_by = pilotofswarm, swarm_id = null, swarm_tag = null
+    where id = ip_id and tag = ip_swarm_tag;
+    end if;
 end //
 delimiter ;
 
@@ -344,6 +431,13 @@ sp_main: begin
 	-- ensure that the quantity of new packages is greater than zero
 	-- ensure that the drone has sufficient capacity to carry the new packages
     -- add more of the ingredient to the drone
+    if exists (select * from drones where id = ip_id and tag = ip_tag)
+    and exists(select * from ingredients where barcode = ip_barcode)
+    and (select sum(payload.quantity)+ ip_more_packages from payload where id = ip_id and tag = ip_tag group by quantity) <= (select capacity from drones where id = ip_id and tag = ip_tag)
+    and ip_more_packages > 0
+    then
+    insert into payload values(ip_id, ip_tag, ip_barcode, ip_more_packages, ip_price);
+    end if;
 end //
 delimiter ;
 
@@ -352,12 +446,20 @@ delimiter ;
 /* This stored procedure allows us to add more fuel to a drone. The drone can only
 be refueled if it's located at the delivery service's home base. */
 -- -----------------------------------------------------------------------------
-drop procedure if exists refuel_drone;
+drop procedure if exists refuel_drone; -- this seems to be working
 delimiter //
 create procedure refuel_drone (in ip_id varchar(40), in ip_tag integer, in ip_more_fuel integer)
 sp_main: begin
 	-- ensure that the drone being switched is valid and owned by the service
     -- ensure that the drone is located at the service home base
+    if exists (select * from drones where id = ip_id and tag = ip_tag)
+    and exists (select * from delivery_services where id = ip_id and home_base = (select hover from drones where id = ip_id and tag = ip_tag))
+    then 
+    update drones
+    set fuel = fuel + ip_more_fuel
+    where id = ip_id and tag = ip_tag;
+    end if;
+    
 end //
 delimiter ;
 
@@ -393,6 +495,21 @@ sp_main: begin
     -- ensure that the drone isn't already at the location
     -- ensure that the drone/swarm has enough fuel to reach the destination and (then) home base
     -- ensure that the drone/swarm has enough space at the destination for the flight
+    if exists (select * from drones where flown_by is not null and id = ip_id and tag = ip_tag and  hover != ip_destination and 
+    fuel >= (fuel_required(hover, ip_destination) + fuel_required(ip_destination, hover)))
+    and exists (select * from locations where label = ip_destination and space > 0)
+    then
+    update drones
+    set fuel = fuel - (fuel_required(hover, ip_destination)), hover = ip_destination
+    where id = ip_id and tag = ip_tag;
+    if exists (select * from drones where swarm_id = ip_id and swarm_tag = ip_tag)
+    then
+		update drones
+		set fuel = fuel - (fuel_required(hover, ip_destination)), hover = ip_destination
+		where swarm_id = ip_id and swarm_tag = ip_tag;
+    end if;
+    end if;
+    
 end //
 delimiter ;
 
@@ -405,7 +522,7 @@ ingredients.  If the transaction is otherwise valid, then the drone and restaura
 information must be changed appropriately.  Finally, we need to ensure that all
 quantities in the payload table (post transaction) are greater than zero. */
 -- -----------------------------------------------------------------------------
-drop procedure if exists purchase_ingredient;
+drop procedure if exists purchase_ingredient; 
 delimiter //
 create procedure purchase_ingredient (in ip_long_name varchar(40), in ip_id varchar(40),
 	in ip_tag integer, in ip_barcode varchar(40), in ip_quantity integer)
@@ -416,6 +533,25 @@ sp_main: begin
 	-- update the drone's payload
     -- update the monies spent and gained for the drone and restaurant
     -- ensure all quantities in the payload table are greater than zero
+    if exists (select * from restaurants where long_name = ip_long_name)
+    and exists (select * from drones where (id = ip_id and tag = ip_tag) and hover = (select location from restaurants where long_name = ip_long_name))
+    and exists (select * from payload where payload.id = ip_id and payload.tag = ip_tag and payload.barcode = ip_barcode and quantity > ip_quantity)
+    then 
+    update payload
+    set quantity = quantity - ip_quantity
+    where payload.id = ip_id and payload.tag = ip_tag and payload.barcode = ip_barcode;
+    update drones
+    set sales = sales + ip_quantity * (select price from payload
+	where payload.id = ip_id and payload.tag = ip_tag and payload.barcode = ip_barcode)
+    where id = ip_id and tag = ip_tag;
+    update restaurants
+    set spent = spent +  ip_quantity * (select price from payload
+	where payload.id = ip_id and payload.tag = ip_tag and payload.barcode = ip_barcode)
+    where long_name = ip_long_name;
+    
+    delete from payload where quantity <= 0;
+    end if;
+    
 end //
 delimiter ;
 
@@ -424,12 +560,17 @@ delimiter ;
 /* This stored procedure removes an ingredient from the system.  The removal can
 occur if, and only if, the ingredient is not being carried by any drones. */
 -- -----------------------------------------------------------------------------
-drop procedure if exists remove_ingredient;
+drop procedure if exists remove_ingredient; -- 
 delimiter //
 create procedure remove_ingredient (in ip_barcode varchar(40))
 sp_main: begin
 	-- ensure that the ingredient exists
     -- ensure that the ingredient is not being carried by any drones
+    if exists (select * from ingredients where barcode = ip_barcode)
+    and not exists (select * from payload where barcode = ip_barcode)
+    then delete from ingredients where barcode = ip_barcode;
+    end if;
+    
 end //
 delimiter ;
 
@@ -446,6 +587,12 @@ sp_main: begin
 	-- ensure that the drone exists
     -- ensure that the drone is not carrying any ingredients
 	-- ensure that the drone is not leading a swarm
+    if (exists (select * from drones where (id = ip_id and tag = ip_tag) and (swarm_id is NULL and swarm_tag is NULL))
+	and not exists (select * from payload where id = ip_id and tag = ip_tag))
+    then 
+    delete from drones where drones.id = ip_id and drones.tag = ip_tag;
+    end if;
+    
 end //
 delimiter ;
 
@@ -463,6 +610,19 @@ sp_main: begin
 	-- ensure that the pilot exists
     -- ensure that the pilot is not controlling any drones
     -- remove all remaining information unless the pilot is also a worker
+<<<<<<< HEAD:cs4400_phase3_stored_procedures_SHELL_v0.sql
+=======
+		if exists (select * from pilots where username = ip_username)
+        and not exists (select * from drones where flown_by = ip_username)
+		-- and not exists (select * from workers where username = ip_username))
+        then
+			delete from pilots where username = ip_username;
+            if not exists (select * from workers where username = ip_username)
+				then delete from employees where username = ip_username;
+                delete from users where username = ip_username;
+			end if;
+        end if;
+>>>>>>> 149024d091525615309e969b06552c6e0de41034:cs4400_phase3_stored_procedures_SHELL_Nov28.sql
 end //
 delimiter ;
 
