@@ -321,13 +321,23 @@ sp_main: begin
     -- ensure that the drone joining the swarm is not already leading a swarm
 	-- ensure that the swarm leader drone is directly controlled
 	-- ensure that the drones are at the same location
-    if (ip_swarm_leader_tag not in (select swarm_tag from drones) and
-    concat(ip_id,ip_tag) in (select concat(id,tag) from drones) and
-    ip_tag not in (select swarm_tag from drones))
-		then update drones set swarm_tag = ip_swarm_leader_tag
-        where id = ip_id and tag = ip_tag;
-	else
-		leave sp_main;
+    -- if (ip_swarm_leader_tag not in (select swarm_tag from drones) and
+    -- concat(ip_id,ip_tag) in (select concat(id,tag) from drones) and
+    -- ip_tag not in (select swarm_tag from drones))
+	-- then update drones set swarm_tag = ip_swarm_leader_tag
+	-- where id = ip_id and tag = ip_tag;
+	-- else
+	-- leave sp_main;
+    declare swarmlocation varchar(40);
+    set swarmlocation = (select hover from drones where id = ip_id and tag = ip_tag);
+    if ip_tag != ip_swarm_leader_tag
+    and exists (select * from drones where id = ip_id and tag = ip_tag and flown_by is not null)
+    and exists (select * from drones where id = ip_id and tag = ip_swarm_leader_tag and flown_by is not null)
+    and exists (select * from drones where id = ip_id and tag = ip_swarm_leader_tag and hover = swarmlocation)
+    then 
+    update drones
+    set flown_by = null, swarm_id = ip_id, swarm_tag = ip_swarm_leader_tag
+    where id = ip_id and tag = ip_tag;
 	end if;
 end //
 delimiter ;
