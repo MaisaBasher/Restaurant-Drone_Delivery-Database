@@ -1,5 +1,11 @@
 -- CS4400: Introduction to Database Systems (Fall 2022)
 -- Project Phase III: Stored Procedures SHELL [v0] Monday, Oct 31, 2022
+
+-- Team 38
+-- Maisa Basher (mbasher3)
+-- Denny Nguyen (dnguyen369)
+-- Ajoke Akinseye (aakinseye3)
+
 set global transaction isolation level serializable;
 set global SQL_MODE = 'ANSI,TRADITIONAL';
 set names utf8mb4;
